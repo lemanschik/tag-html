@@ -17,6 +17,24 @@ https://github.com/direktspeed/webcomponents/
 
 ```js
 import {html, htmlPromise, render, asElement, renderAsElement, getTagName, defineComponentElement} from 'tag-html';
+
+/**
+ * Safely converts an HTML string into a DOM element.
+ * It uses the <template> element to prevent script execution and XSS attacks.
+ * @param {string} htmlString The HTML string to convert.
+ * @returns {HTMLElement | null} The created DOM element, or null if the string is empty.
+ */
+export const htmlToElement = ((htmlString) => {
+  const template = (globalThis.document && globalThis.document?.createElement('template')) || {
+   innerHTML: "", content: { firstElementChild: htmlString }
+  };
+
+  template.innerHTML = htmlString.trim();
+  // Use firstElementChild to skip any leading whitespace text nodes
+  return template.content.firstElementChild;
+})(`<div>hello world </div>`)
+
+
 // # String Methods
 // This is a tag-html template function. It returns a tag-html template.
 const helloTemplate = name => html`<div>Hello ${name}!</div>`;
