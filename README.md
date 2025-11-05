@@ -1,7 +1,3 @@
-Of course! Here is the complete README, with the clean, modern documentation at the top, followed by a clearly marked section containing the older, legacy content to ensure everything is preserved.
-
----
-
 # tag-html: HTML Templating
 
 A minimalistic, expressive, and cross-platform templating library using standard JavaScript Tagged Template Literals.
