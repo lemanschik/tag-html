@@ -5,6 +5,8 @@ while offering Cross Platform and Environment Support. Eg: WebWorker ServiceWork
 
 it even is lit-html compatible the only striped out feature is directives its successor is customElements
 
+look also into: https://github.com/direktspeed/webcomponents/tree/master when you need a registry
+
 it creates Efficient, Fast ,Expressive, Extensible HTML templates with JavaScript Tagged Template Literals that render in any Environment 
 
 offers also a Cross Environment WebComponents bridge to allow SSR and CustomElements without a JSDOM in nodejs
