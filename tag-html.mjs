@@ -425,6 +425,24 @@ export const createTemplateElement = (strArr, ...valArr) => {
     };
 };
 
+/**
+ * Safely converts an HTML string into a DOM element.
+ * It uses the <template> element to prevent script execution and XSS attacks.
+ * @param {string} htmlString The HTML string to convert.
+ * @returns {HTMLElement | null} The created DOM element, or null if the string is empty.
+ * TODO: Point out diff between this and createTemplateElement
+ */
+export const htmlToElement = (htmlString) => {
+  const template = (globalThis.document && globalThis.document?.createElement('template')) || {
+   innerHTML: "", content: { firstElementChild: htmlString }
+  };
+
+  template.innerHTML = htmlString.trim();
+  // Use firstElementChild to skip any leading whitespace text nodes
+  return template.content.firstElementChild;
+}
+                             
+
 // --- Environment-Specific ---
 
 /**
