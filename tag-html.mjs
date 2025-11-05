@@ -1,277 +1,436 @@
-export { isEqual,isType, isString, isObject, isNumber, isStringObject, isPromise, isFunction } from './is.mjs'
-
-export const escapeHtml = s => (s + '').replace(/[&<>"']/g, m => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;',
-    '"': '&quot;', "'": '&#39;'
-})[m]);
-// is helper
-//Returns true if it is a DOM node
-
-export const isNode = o => isObject(Node) ? o instanceof Node : 
-    o && isObject(o) && isNumber(o.nodeType) && isString(o.nodeName)
-  
-//Returns true if it is a DOM element    
-const isElement = o => isObject(HTMLElement) ? o instanceof HTMLElement : //DOM2
-    o && isObject(o) && o !== null && o.nodeType === 1 && isString(o.nodeName)
-// needs benchmark if this is faster obj.constructor.toString()
-const protoStr = obj => Object.prototype.toString.call(Object.getPrototypeOf(obj))
-const isHtmlElement = obj => ((x)=> x.indexOf('HTML') > -1 && x.indexOf('Element') > -1)(protoStr(obj))
-
-//Render Methods
-
 /**
- * Tagged Template Literal that returns string value
- * @param {Array<String>} strArr 
- * @param {...*} valArr
- * @returns {String} string
+ * @file This file contains a collection of utility functions for type checking,
+ * string manipulation, DOM interaction, and component rendering.
+ * @module Utils
  */
-export const html = (...args) => renderString(...args)
-export const renderString = (strArr,...valArr) => renderLiteral(strArr.raw ? strArr.raw : strArr ,...valArr);
-// Should be moved into tagged-template-strings
+
+// --- Type Checking ---
+
+export {
+    isEqual,
+    isType,
+    isString,
+    isObject,
+    isNumber,
+    isStringObject,
+    isPromise,
+    isFunction
+} from './is.mjs';
+
 /**
- * OneLine(literals: TemplateStringsArray, ...placeholders: any[]): string
- * @param strings 
- * @param keys 
+ * Checks if a value is a DOM node.
+ * @param {*} o - The value to check.
+ * @returns {boolean} True if the value is a DOM node, otherwise false.
+ */
+export const isNode = o => (
+    isObject(Node) ? o instanceof Node :
+    o && isObject(o) && isNumber(o.nodeType) && isString(o.nodeName)
+);
+
+/**
+ * Checks if a value is a DOM element.
+ * @param {*} o - The value to check.
+ * @returns {boolean} True if the value is a DOM element, otherwise false.
+ */
+export const isElement = o => (
+    isObject(HTMLElement) ? o instanceof HTMLElement : // DOM2
+    o && isObject(o) && o !== null && o.nodeType === 1 && isString(o.nodeName)
+);
+
+/**
+ * Returns the string representation of an object's prototype.
+ * @param {object} obj - The object to get the prototype string from.
+ * @returns {string} The string representation of the object's prototype.
+ */
+const protoStr = obj => Object.prototype.toString.call(Object.getPrototypeOf(obj));
+
+/**
+ * Checks if an object is an HTML element.
+ * @param {object} obj - The object to check.
+ * @returns {boolean} True if the object is an HTML element, otherwise false.
+ */
+export const isHtmlElement = obj => ((x) => x.indexOf('HTML') > -1 && x.indexOf('Element') > -1)(protoStr(obj));
+
+
+// --- String Manipulation ---
+
+/**
+ * Escapes HTML special characters in a string.
+ * @param {string} s - The string to escape.
+ * @returns {string} The escaped string.
+ */
+export const escapeHtml = s => (s + '').replace(/[&<>"']/g, m => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+})[m]);
+
+/**
+ * A tagged template literal that removes line breaks and extra whitespace.
+ * @param {TemplateStringsArray} strArr - The template string array.
+ * @param {...*} valArr - The values to interpolate.
+ * @returns {string} The formatted string.
  */
 export const oneline = (strArr, ...valArr) => strArr
-   .reduce((acc, part, i) => acc + part + (valArr[i] || '') , '')
-   .replace(/(?:\n(?:\s*))+/g, ' ')
-   .trim()
-   
-export const renderLiteral = (strArr,...valArr) => strArr
-    .map((strItm, i) => `${strItm}${valArr[i] ? `${valArr[i]}` : ''}`) 
-    .join('')
-// Promise Support returns a promise that resolved to html``result with all values resolved
-// If one Promise Rejects without Handling it via catch it will throw?
-// This allows timeout feature to return a template in a given time.
-export const htmlPromise = (strArr, ...valArr) => Promise.all(valArr).then(vA => html(strArr, vA));
+    .reduce((acc, part, i) => acc + part + (valArr[i] || ''), '')
+    .replace(/(?:\n(?:\s*))+/g, ' ')
+    .trim();
 
-export const renderToElement = (strArr, ...valArr) => {
-    return el => {
-        el.innerHTML = processTemplate(strArr, ...valArr)
-        replacePlaceholderNodes(el)
-    }
-}
+
+// --- Rendering ---
 
 /**
- * setPropertys on a Elemenet befor it is inserted into the if it has component property it will set it on that.
- * @param props 
+ * A tagged template literal that renders a string.
+ * @param {Array<String>} strArr - The template string array.
+ * @param {...*} valArr - The values to interpolate.
+ * @returns {String} The rendered string.
  */
-export const setProps = props => props
-export const getComponentResult = c => typeof c.render === 'function' ? c.render() : typeof c === 'function' ? c() : c;
-export const getRenderTarget = el => typeof el.shadowRoot !== 'undefined' ? el.shadowRoot.innerHTML : typeof el.innerHTML !== 'undefined' ? el.innerHTML : el;
+export const html = (...args) => renderString(...args);
 
-// could maybe look if used in the browser and directly use 
-// createTemplateElement.
+/**
+ * Renders a template literal to a string.
+ * @param {TemplateStringsArray} strArr - The template string array.
+ * @param {...*} valArr - The values to interpolate.
+ * @returns {string} The rendered string.
+ */
+export const renderString = (strArr, ...valArr) => renderLiteral(strArr.raw ? strArr.raw : strArr, ...valArr);
+
+/**
+ * Renders a template literal by joining the string parts and values.
+ * @param {TemplateStringsArray} strArr - The template string array.
+ * @param {...*} valArr - The values to interpolate.
+ * @returns {string} The rendered string.
+ */
+export const renderLiteral = (strArr, ...valArr) => strArr
+    .map((strItm, i) => `${strItm}${valArr[i] ? `${valArr[i]}` : ''}`)
+    .join('');
+
+/**
+ * A tagged template literal that returns a promise that resolves to the rendered HTML string.
+ * @param {TemplateStringsArray} strArr - The template string array.
+ * @param {...*} valArr - The values to interpolate, which can be promises.
+ * @returns {Promise<string>} A promise that resolves to the rendered HTML string.
+ */
+export const htmlPromise = (strArr, ...valArr) => Promise.all(valArr).then(vA => html(strArr, ...vA));
+
+/**
+ * Renders a template to a DOM element.
+ * @param {TemplateStringsArray} strArr - The template string array.
+ * @param {...*} valArr - The values to interpolate.
+ * @returns {function(HTMLElement): void} A function that takes an element and sets its innerHTML.
+ */
+export const renderToElement = (strArr, ...valArr) => {
+    return el => {
+        el.innerHTML = processTemplate(strArr, ...valArr);
+        replacePlaceholderNodes(el);
+    };
+};
+
+/**
+ * Synchronously renders a component to a target element or returns the result.
+ * @param {object|function} component - The component to render.
+ * @param {HTMLElement} [el] - The target element to render into.
+ * @returns {string|HTMLElement} The rendered result or the target element.
+ */
 export const render = (component, el) => {
-    const result = getComponentResult(component)
-    if (!el) { return result; }
-    let target = getRenderTarget(el)
-    // We Should support Async Components Promise, iterator, Stream.
-        
+    const result = getComponentResult(component);
+    if (!el) {
+        return result;
+    }
+
+    let target = getRenderTarget(el);
     if (isFunction(target)) {
-        return target(result)
+        return target(result);
     }
 
     target = result;
-    //This allows sync use of render directly
     return el;
 };
 
+/**
+ * Asynchronously renders a component to a target element or returns the result.
+ * @param {object|function} component - The component to render.
+ * @param {HTMLElement} [el] - The target element to render into.
+ * @returns {Promise<string|HTMLElement>} A promise that resolves to the rendered result or the target element.
+ */
 export const renderAsync = async (component, el) => {
-    const result = getComponentResult(component)
+    const result = getComponentResult(component);
     return Promise.resolve(result).then(getComponentResult).then(r => {
-        if (!el) { return result; }
-        const target = getRenderTarget(el)
-        if (isFunction(target)) {
-            return target(r)
+        if (!el) {
+            return r;
         }
-        target = result;
-        return el
-    })
-}
-// Maybe deprecated
-export const append = (x,el) => {
-    const result = getComponentResult(component)
-    if (!el) { return result; }
-    // Should use browsers append method if possible
-    const target = getRenderTarget(el);
-    target = target+result;
-    return el;
-}
-
-// Renders a Component as it would be a custom-element to allow components with element defintions
-export const renderAsElement = c => `<${getTagName(c)}>${render(c)}</${getTagName(c)}>`
-export const asElement = c => `<${getTagName(c)}></${getTagName(c)}>`
-export const appendElement = (el,i) => el.replace('><', `>${i}<`)
-// tackes a Class and registers a element if none is registered it will register it and return it
-export const createElementDefinition = (x,base=typeof HTMLElement !== 'undefined' ? HTMLElement : class { }) => {
-    /*
-        Concepts we don't assign any methods to the prototype of the new Class only the component
-        this allows to call the component with new inside of the element if needed via
-        connectedCallback. it leaves the component untouched.
-    */
-    // use x.name as class name
-    const isClass = Object.keys(Object.getPrototypeOf(x)).length === 0
-    //class.toString() it maybe
-    //if class extends other class mixin that.
-    const newClass = new Function(`return class ${x.name} extends base {}`)()
-    newClass.prototype.component = x
-    
-    /*
-        Alternativ would be to copy stuff over to the new class
-        This is discuraged as it leads to errors if the coder
-        is not aware of all details
-    */
-    //if isClass we need to copy the prototype else we copy the object.
-    // maybe can be object assign ? but that would take constructor?
-    //Object.keys(x.prototype).map(m => newClass.prototype[m] = x.prototype[m])
-    //connectedCallback() { this.innerHTML = this.component.render() }
-    
-    /*
-        third method isomorphic class that is based on ifHTMLElement or mixin
-        this don't needs this createElement Method it is a Element if needed.
-    */
-    
-    //Object.setPrototypeOf(Element.prototype, x.prototype)
-    return newClass
+        const target = getRenderTarget(el);
+        if (isFunction(target)) {
+            return target(r);
+        }
+        target = r;
+        return el;
+    });
 };
 
-// Stream Processing binding (**optional**) you can always go the react way with render()
-class streamElement {
-    view(ctx) {
-        const color = ctx.color
-        return html`<input style="background-color: ${color};">`;
+/**
+ * Appends a rendered component to an element.
+ * @param {*} x - The component to render and append.
+ * @param {HTMLElement} el - The target element.
+ * @returns {HTMLElement} The target element.
+ */
+export const append = (x, el) => {
+    const result = getComponentResult(x);
+    if (!el) {
+        return result;
     }
-    connectedCallback() {
-        // Setup State
-        this.color = 'green'
-        //Render view if needed supply propertys via arguments
-        this.innerHTML = this.innerHTML.length === 0 ? this.view(this) : this.innerHTML;
-        //select element or elements for bindings to this state this.querySelector('')
-        setTimeout(() => {
-            this.setAttribute("class", "democlass");
-            this.style.backgroundColor = 'red'    
-        },4000)
-        
-        //Update <tag attribute=value>
-        //Update <tag attribute>
-        //get attribute as part
-        //this.attribute
-    }
-}
-/*
-    <stream-element>${value}<stream-element>
-*/
+    // Note: This is not a direct DOM manipulation, it concatenates strings.
+    const target = getRenderTarget(el);
+    target.innerHTML += result;
+    return el;
+};
+
+/**
+ * Renders a component as a custom element string.
+ * @param {object|function} c - The component.
+ * @returns {string} The component rendered as a custom element string.
+ */
+export const renderAsElement = c => `<${getTagName(c)}>${render(c)}</${getTagName(c)}>`;
+
+/**
+ * Creates an empty custom element string for a component.
+ * @param {object|function} c - The component.
+ * @returns {string} An empty custom element string.
+ */
+export const asElement = c => `<${getTagName(c)}></${getTagName(c)}>`;
+
+/**
+ * Inserts content into an empty HTML element string.
+ * @param {string} el - The HTML element string.
+ * @param {string} i - The content to insert.
+ * @returns {string} The element string with the content inserted.
+ */
+export const appendElement = (el, i) => el.replace('><', `>${i}<`);
 
 
-// Advanced utils helpers 
-export function TagToStr(strings, ...values) {
-    let i = 0
+// --- Component Handling ---
+
+/**
+ * A placeholder function for setting properties on an element.
+ * @param {object} props - The properties to set.
+ * @returns {object} The properties object.
+ */
+export const setProps = props => props;
+
+/**
+ * Gets the renderable result from a component.
+ * @param {object|function} c - The component.
+ * @returns {*} The renderable result.
+ */
+export const getComponentResult = c => (typeof c.render === 'function' ? c.render() : typeof c === 'function' ? c() : c);
+
+/**
+ * Gets the render target of an element (shadowRoot or innerHTML).
+ * @param {HTMLElement} el - The element.
+ * @returns {string} The render target.
+ */
+export const getRenderTarget = el => (el.shadowRoot ? el.shadowRoot.innerHTML : el.innerHTML);
+
+/**
+ * Creates a custom element class definition from a component.
+ * @param {object} x - The component class or object.
+ * @param {HTMLElement} [base=HTMLElement] - The base class to extend.
+ * @returns {HTMLElement} The new custom element class.
+ */
+export const createElementDefinition = (x, base = typeof HTMLElement !== 'undefined' ? HTMLElement : class {}) => {
+    const newClass = new Function(`return class ${x.name} extends base {}`)();
+    newClass.prototype.component = x;
+    return newClass;
+};
+
+/**
+ * Defines a custom element for a component if it's not already defined.
+ * @param {object|function} componentClass - The component class or definition.
+ * @returns {Promise<void>}
+ */
+export const defineComponentElement = async componentClass => {
+    if (typeof customElements === 'undefined') {
+        return;
+    }
+    const definition = isFunction(componentClass) ? componentClass() : componentClass;
+    const tagName = getTagName(definition);
+    if (typeof customElements.get(tagName) === 'undefined') {
+        customElements.define(tagName, definition);
+    }
+};
+
+
+// --- Advanced Utilities ---
+
+/**
+ * Converts a tagged template literal to a string with placeholders.
+ * @param {TemplateStringsArray} strings - The template string array.
+ * @returns {string} The string with placeholders like `${0}`, `${1}`, etc.
+ */
+export function TagToStr(strings) {
     return strings
-      .map((s,i)=>(i === strings.raw.length-1) ? strings.raw[i] : strings.raw[i]+'${'+i+'}')
-      .join('')
+        .map((s, i) => (i === strings.raw.length - 1) ? strings.raw[i] : strings.raw[i] + '${' + i + '}')
+        .join('');
 }
-//console.log(TagToStr`${me}t4 string text line 1 \n ${me} string text line 2 ${me} me`);
 
-export const runInContext = (source,ctx) => {
-    const [keys, vals] = ObjToArrays(ctx)
-    return Function(keys, source).apply(ctx,vals);
-}
+/**
+ * Executes a string of code in a given context.
+ * @param {string} source - The code to execute.
+ * @param {object} ctx - The context object with variables.
+ * @returns {*} The result of the executed code.
+ */
+export const runInContext = (source, ctx) => {
+    const [keys, vals] = ObjToArrays(ctx);
+    return Function(keys, source).apply(ctx, vals);
+};
+
+/**
+ * Converts a string with placeholders back to a template literal result.
+ * @param {string} str - The string with placeholders.
+ * @returns {function(object): string} A function that takes a context and returns the rendered string.
+ */
 export const StrToTag = str => {
     const source = `return (() => \`${str}\`)()`;
-    return runInContext(source,ctx)
-}
-// StrToTag Supporting async values in the ctx
+    return (ctx) => runInContext(source, ctx);
+};
+
+/**
+ * Asynchronously converts a string with placeholders to a template literal result, supporting async values.
+ * @param {string} str - The string with placeholders.
+ * @returns {function(object): Promise<string>} A function that takes a context and returns a promise resolving to the rendered string.
+ */
 export const strToTagPromise = async str => {
     const source = `return ((async () => \`${str.replace(/\${/g, '${await ')}\`))()`;
-    return runInContext(source,ctx)
-}
+    return (ctx) => runInContext(source, ctx);
+};
 
-// Accepts only Objects
-// is used as middleware in tagged template literals to reconstruct the keys for a template
-export const ObjToArrays = obj => { 
-    const arrays = [[], []] // [[...keysAsString],[...values]]
+/**
+ * Converts an object to two arrays: one of keys and one of values.
+ * @param {object} obj - The object to convert.
+ * @returns {Array<Array<string>, Array<*>>} An array containing two arrays: keys and values.
+ */
+export const ObjToArrays = obj => {
+    const arrays = [[], []]; // [[...keysAsString], [...values]]
     for (let key in obj) {
         if (obj.hasOwnProperty(key)) {
-          arrays[0].push(key);
-          arrays[1].push(ctx[key]);
+            arrays[0].push(key);
+            arrays[1].push(obj[key]);
         }
-    };
-    return arrays; // const [keys,vals] = arrays
-}
-// ObjToArrays reversed 
+    }
+    return arrays; // const [keys, vals] = arrays
+};
+
+/**
+ * Converts two arrays (keys and values) back to an object.
+ * @param {Array<Array<string>, Array<*>>} arrays - An array containing two arrays: keys and values.
+ * @returns {object} The reconstructed object.
+ */
 export const ArraysToObject = arrays => {
     const [keys, vals] = arrays;
-    const obj = {}
+    const obj = {};
     keys.map((key, i) => obj[key] = vals[i]);
-}
+    return obj;
+};
 
 
+// --- Naming Conventions ---
 
-// That means it is registered as it follows rule to include registration?
-//Take MyComponent and return render if exist wrapp that result by its my-component tag.
 /**
-   A Custom Element gets registered with a tag 
-   in the string representation a element also needs a tag
-   so a isomorphic way to register or render the component
-   to a tag is essential only the main app view don't needs a tag 
-   as it produces the <html> or its tag could even be html
-*/
-// converts `YourString` into `your-string`
+ * Converts an UpperCamelCase string to snake-case.
+ * @param {string} string - The string to convert.
+ * @returns {string} The snake-cased string.
+ */
 export const upperCamelCaseToSnakeCase = string => string
     .replace(/^([A-Z])/, $1 => $1.toLowerCase())
     .replace(/([A-Z])/g, $1 => "-" + $1.toLowerCase());
 
-// converts `your-string` into `YourString`
+/**
+ * Converts a snake-case string to UpperCamelCase.
+ * @param {string} string - The string to convert.
+ * @returns {string} The UpperCamelCased string.
+ */
 export const snakeCaseToUpperCamelCase = string => string
     .toLowerCase()
     .replace(/^([a-z])/, $1 => $1.toUpperCase())
     .replace(/\-./g, $1 => $1.substring(1, 2).toUpperCase());
 
-// converts your-string into `yourString`
-export const snakeCaseToLowerCamelCase = string => snakeCaseToUpperCamelCase(string).replace(/^([a-z])/, $1 => $1.toLowerCase())
+/**
+ * Converts a snake-case string to lowerCamelCase.
+ * @param {string} string - The string to convert.
+ * @returns {string} The lowerCamelCased string.
+ */
+export const snakeCaseToLowerCamelCase = string => snakeCaseToUpperCamelCase(string).replace(/^([A-Z])/, $1 => $1.toLowerCase());
 
-export const getName = Class => Class.name !== 'undefined' ? Class.name : Class.constructor.name !== 'undefined' ? Class.constructor.name : new Error('Class has no name property')
-export const getTagName = Class => upperCamelCaseToSnakeCase(getName(Class))
-export const getClassName = tagName => snakeCaseToUpperCamelCase(tagName)
+/**
+ * Gets the name of a class.
+ * @param {function} Class - The class.
+ * @returns {string} The name of the class.
+ */
+export const getName = Class => Class.name || Class.constructor.name || new Error('Class has no name property');
 
-export const defineComponentElement = async componentClass => {
-    if (typeof customElements === 'undefined') {
-        //here could be logic to express that component is a Element.
-        //but that should be not done as this breaks other concepts
-        //This should get used by Components to register them self.
-        //or to register additional defintions for a component. that has none.
-        return
-    }
-    const defintion = isFunction(componentClass) ? componentClass() : componentClass   
-    const tagName = getTagName(defintion)
-    if (typeof customElements.get(tagName) === 'undefined') {
-        customElements.define(tagName, defintion);
-    }
-}
+/**
+ * Gets the tag name for a component class (converts UpperCamelCase to snake-case).
+ * @param {function} Class - The component class.
+ * @returns {string} The tag name.
+ */
+export const getTagName = Class => upperCamelCaseToSnakeCase(getName(Class));
 
-// Works only in the dom
+/**
+ * Gets the class name from a tag name (converts snake-case to UpperCamelCase).
+ * @param {string} tagName - The tag name.
+ * @returns {string} The class name.
+ */
+export const getClassName = tagName => snakeCaseToUpperCamelCase(tagName);
+
+
+// --- DOM Utilities ---
+
+/**
+ * Processes a template literal, replacing element placeholders.
+ * @param {TemplateStringsArray} strArr - The template string array.
+ * @param {...*} valArr - The values to interpolate.
+ * @returns {string} The processed HTML string with placeholders for elements.
+ */
 const processTemplate = (strArr, ...valArr) => strArr
-    .map((s, i) => `${s}${valArr[i] ? isElement(valArr[i]) ? `<unknown-html-element-placeholder class="${i}"></unknown-html-element-placeholder>` : `${valArr[i]}` : s}`)
-    .join('')
+    .map((s, i) => `${s}${valArr[i] ? isElement(valArr[i]) ? `<unknown-html-element-placeholder class="${i}"></unknown-html-element-placeholder>` : `${valArr[i]}` : ''}`)
+    .join('');
 
-const replacePlaceholderNodes = (DOMNode,valArr) => DOMNode.querySelectorAll('unknown-html-element-placeholder')
-    .forEach(el => el.parentNode.replaceChild(valArr[el.className], el))
+/**
+ * Replaces placeholder nodes with actual DOM elements.
+ * @param {DocumentFragment|HTMLElement} DOMNode - The DOM node containing placeholders.
+ * @param {Array<*>} valArr - The array of values, including elements to insert.
+ */
+const replacePlaceholderNodes = (DOMNode, valArr) => DOMNode.querySelectorAll('unknown-html-element-placeholder')
+    .forEach(el => el.parentNode.replaceChild(valArr[el.className], el));
 
+/**
+ * Creates a template element from a template literal.
+ * @param {TemplateStringsArray} strArr - The template string array.
+ * @param {...*} valArr - The values to interpolate.
+ * @returns {function(HTMLElement): DocumentFragment} A function that clones the template and appends it to an element.
+ */
 export const createTemplateElement = (strArr, ...valArr) => {
-    const template = document.createElement('template')
-    template.innerHTML = processTemplate(strArr, ...valArr)
-    replacePlaceholderNodes(template.content)
+    const template = document.createElement('template');
+    template.innerHTML = processTemplate(strArr, ...valArr);
+    replacePlaceholderNodes(template.content, valArr);
 
     return el => {
-            const node = template.content.cloneNode(true);
+        const node = template.content.cloneNode(true);
+        if (el) {
             el.appendChild(node);
-            return node;
         }
-}
+        return node;
+    };
+};
 
-//A ES Module that runs in the browser and any other environment that returns HTMLElement Conditional
-const ifHTMLElement = typeof HTMLElement !== 'undefined' ? HTMLElement : class HTMLElement { }
-export { ifHTMLElement as HTMLElement };
+// --- Environment-Specific ---
 
+/**
+ * A conditional export for HTMLElement that falls back to a class for non-browser environments.
+ */
+const ifHTMLElement = typeof HTMLElement !== 'undefined' ? HTMLElement : class HTMLElement {};
+export {
+    ifHTMLElement as HTMLElement
+};
